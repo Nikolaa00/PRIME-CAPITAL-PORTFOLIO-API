@@ -1,0 +1,19 @@
+meta {
+  name: Client Balance
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/clients/{{clientId}}/balance
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+docs {
+  Expected: 200 OK with cash (decimal string) and currency.
+}

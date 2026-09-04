@@ -1,0 +1,34 @@
+meta {
+  name: Create Client
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/clients
+  body: json
+  auth: none
+}
+
+headers {
+  Accept: application/json
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "Ana",
+    "currency": "EUR"
+  }
+}
+
+script:post-response {
+  if (res.body?.id) {
+    bru.setEnvVar("clientId", String(res.body.id));
+  }
+}
+
+docs {
+  Expected: 201 Created with id, name, currency.
+  Post-response script sets clientId environment variable for subsequent requests.
+}

@@ -1,0 +1,29 @@
+meta {
+  name: 03 Buy 5 ANA
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/clients/{{clientId}}/transactions
+  body: json
+  auth: none
+}
+
+headers {
+  Accept: application/json
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "type": "buy",
+    "instrument": "ANA",
+    "quantity": 5,
+    "price": "100.00"
+  }
+}
+
+docs {
+  Ana workflow step 3. Expected 201. Cash 500.00, holdings ANA 5.
+}

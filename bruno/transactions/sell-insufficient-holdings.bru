@@ -1,0 +1,29 @@
+meta {
+  name: Sell Insufficient Holdings
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/api/clients/{{clientId}}/transactions
+  body: json
+  auth: none
+}
+
+headers {
+  Accept: application/json
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "type": "sell",
+    "instrument": "ANA",
+    "quantity": 8,
+    "price": "120.00"
+  }
+}
+
+docs {
+  Expected: 422 with error insufficient_holdings (Ana holds 5, tried to sell 8).
+}

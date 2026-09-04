@@ -1,0 +1,29 @@
+meta {
+  name: Buy Insufficient Funds
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/clients/{{clientId}}/transactions
+  body: json
+  auth: none
+}
+
+headers {
+  Accept: application/json
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "type": "buy",
+    "instrument": "ANA",
+    "quantity": 7,
+    "price": "100.00"
+  }
+}
+
+docs {
+  Expected: 422 with error insufficient_funds (Ana has 500 EUR, needs 700).
+}

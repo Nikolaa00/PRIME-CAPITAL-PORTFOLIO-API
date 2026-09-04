@@ -1,0 +1,19 @@
+meta {
+  name: 04 Get Balance 500
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/clients/{{clientId}}/balance
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+docs {
+  Ana workflow step 4. Expected 200 with cash 500.00 and currency EUR.
+}

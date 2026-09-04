@@ -1,0 +1,19 @@
+meta {
+  name: Show Client
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/clients/{{clientId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+docs {
+  Expected: 200 OK with client id, name, currency, cash, and holdings.
+}

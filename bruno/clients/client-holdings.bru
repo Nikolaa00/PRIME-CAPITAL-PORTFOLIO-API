@@ -1,0 +1,19 @@
+meta {
+  name: Client Holdings
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/clients/{{clientId}}/holdings
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+docs {
+  Expected: 200 OK with holdings object (instrument ticker => quantity).
+}

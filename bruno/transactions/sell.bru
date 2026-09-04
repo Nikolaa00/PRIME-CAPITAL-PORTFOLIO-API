@@ -1,0 +1,29 @@
+meta {
+  name: Sell
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/clients/{{clientId}}/transactions
+  body: json
+  auth: none
+}
+
+headers {
+  Accept: application/json
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "type": "sell",
+    "instrument": "ANA",
+    "quantity": 3,
+    "price": "120.00"
+  }
+}
+
+docs {
+  Expected: 201 Created. Ana scenario: sell 3 ANA at 120.00 (360 EUR proceeds).
+}

@@ -1,0 +1,27 @@
+meta {
+  name: Deposit
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/clients/{{clientId}}/transactions
+  body: json
+  auth: none
+}
+
+headers {
+  Accept: application/json
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "type": "deposit",
+    "amount": "1000.00"
+  }
+}
+
+docs {
+  Expected: 201 Created. Ana scenario step: deposit 1000 EUR.
+}

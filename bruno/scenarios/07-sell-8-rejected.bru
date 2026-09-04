@@ -1,0 +1,29 @@
+meta {
+  name: 07 Sell 8 Rejected
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/api/clients/{{clientId}}/transactions
+  body: json
+  auth: none
+}
+
+headers {
+  Accept: application/json
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "type": "sell",
+    "instrument": "ANA",
+    "quantity": 8,
+    "price": "120.00"
+  }
+}
+
+docs {
+  Ana workflow step 7. Expected 422 insufficient_holdings. Ledger unchanged.
+}
