@@ -12,3 +12,4 @@
 | `app/Http/Resources/**` | [resources.md](resources.md) |
 | `database/migrations/**` | [migrations.md](migrations.md) |
 | `tests/**` | [tests.md](tests.md) |
+| `bruno/**` | [bruno.md](bruno.md) |
