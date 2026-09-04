@@ -11,9 +11,12 @@ use Illuminate\Support\Facades\DB;
 
 class LedgerService
 {
-    public function __construct(
-        private PortfolioReader $portfolioReader,
-    ) {}
+    private PortfolioReader $portfolioReader;
+
+    public function __construct(PortfolioReader $portfolioReader)
+    {
+        $this->portfolioReader = $portfolioReader;
+    }
 
     public function deposit(Client $client, int $amountCents): Transaction
     {
