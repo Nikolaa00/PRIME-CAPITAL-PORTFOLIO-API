@@ -6,6 +6,7 @@ use App\Enums\TransactionType;
 use App\Models\Client;
 use App\Models\Transaction;
 use App\Support\Money;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class TransactionService
 {
@@ -14,6 +15,14 @@ class TransactionService
     public function __construct(LedgerService $ledgerService)
     {
         $this->ledgerService = $ledgerService;
+    }
+
+    /**
+     * @return LengthAwarePaginator<int, Transaction>
+     */
+    public function paginatedLedger(Client $client, int $perPage = 15): LengthAwarePaginator
+    {
+        return $client->transactions()->latest()->paginate($perPage);
     }
 
     /**
@@ -45,23 +54,5 @@ class TransactionService
                 Money::fromDecimal((string) $validated['price']),
             ),
         };
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    public function toArray(Transaction $transaction): array
-    {
-        return [
-            'id' => $transaction->id,
-            'client_id' => $transaction->client_id,
-            'type' => $transaction->type->value,
-            'amount' => Money::toDecimal($transaction->amount_cents),
-            'instrument' => $transaction->instrument,
-            'quantity' => $transaction->quantity,
-            'price' => $transaction->price_cents === null
-                ? null
-                : Money::toDecimal($transaction->price_cents),
-        ];
     }
 }
