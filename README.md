@@ -20,7 +20,7 @@ Append-only ledger API for client cash and instrument holdings. Every deposit, w
 
 ```bash
 git clone https://github.com/Nikolaa00/PRIME-CAPITAL-PORTFOLIO-API.git
-cd prime-capital-portfolio-api
+cd PRIME-CAPITAL-PORTFOLIO-API
 cp .env.example .env
 composer install
 ./vendor/bin/sail up -d
@@ -56,6 +56,46 @@ The project includes a complete [Bruno](https://www.usebruno.com/) collection fo
    - `clients/` — Create, list, show, and check balance/holdings of clients.
    - `transactions/` — Record deposits, withdrawals, buys, sells, and list paginated transactions.
    - `scenarios/` — Step-by-step requests replicating the mentor's evaluation scenario (Ana's scenario).
+
+## API examples
+
+All requests should send `Accept: application/json`. POST bodies use `Content-Type: application/json`. The Bruno collection covers every endpoint; these three show the shapes.
+
+**Create client**
+
+```bash
+curl -s -X POST http://localhost:8080/api/clients \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Marko","currency":"EUR"}'
+```
+
+```json
+{"id":4,"name":"Marko","currency":"EUR"}
+```
+
+**Show client after seed** (Ana, id 1)
+
+```bash
+curl -s http://localhost:8080/api/clients/1
+```
+
+```json
+{"data":{"id":1,"name":"Ana","currency":"EUR"},"cash":"860.00","holdings":{"AAPL":2}}
+```
+
+**Rejected write** — withdrawal above balance (`LedgerService`, HTTP 422)
+
+```bash
+curl -s -X POST http://localhost:8080/api/clients/1/transactions \
+  -H "Content-Type: application/json" \
+  -d '{"type":"withdrawal","amount":"9999.00"}'
+```
+
+```json
+{"message":"Insufficient funds: balance is 860.00 EUR, requested 9999.00 EUR.","error":"insufficient_funds"}
+```
+
+Malformed input (wrong type, negative amount) is a different 422: `{ "message": "...", "errors": { "field": ["..."] } }`.
 
 ## Running Seeders & Tests
 
@@ -131,7 +171,7 @@ API базирано на додатен дневник (append-only ledger) з�
 
 ```bash
 git clone https://github.com/Nikolaa00/PRIME-CAPITAL-PORTFOLIO-API.git
-cd prime-capital-portfolio-api
+cd PRIME-CAPITAL-PORTFOLIO-API
 cp .env.example .env
 composer install
 ./vendor/bin/sail up -d
@@ -167,6 +207,46 @@ curl -s http://localhost:8080/api/clients/1
    - `clients/` — Креирање, листање, прикажување и проверка на состојба/сопственост на клиентите.
    - `transactions/` — Запишување депозити, повлекувања, купувања, продавања и листање на пагинирани трансакции.
    - `scenarios/` — Чекор-по-чекор барања кои го реплицираат сценариото за евалуација на менторот (сценариото за Ана).
+
+## API примери
+
+Сите барања треба да го праќаат `Accept: application/json`. POST телата користат `Content-Type: application/json`. Bruno колекцијата ги покрива сите рути; овие три ги покажуваат формите.
+
+**Креирај клиент**
+
+```bash
+curl -s -X POST http://localhost:8080/api/clients \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Marko","currency":"EUR"}'
+```
+
+```json
+{"id":4,"name":"Marko","currency":"EUR"}
+```
+
+**Прикажи клиент по seed** (Ана, id 1)
+
+```bash
+curl -s http://localhost:8080/api/clients/1
+```
+
+```json
+{"data":{"id":1,"name":"Ana","currency":"EUR"},"cash":"860.00","holdings":{"AAPL":2}}
+```
+
+**Одбиено запишување** — повлекување над состојбата (`LedgerService`, HTTP 422)
+
+```bash
+curl -s -X POST http://localhost:8080/api/clients/1/transactions \
+  -H "Content-Type: application/json" \
+  -d '{"type":"withdrawal","amount":"9999.00"}'
+```
+
+```json
+{"message":"Insufficient funds: balance is 860.00 EUR, requested 9999.00 EUR.","error":"insufficient_funds"}
+```
+
+Лошо обликуван влез (погрешен тип, негативен износ) е друга 422: `{ "message": "...", "errors": { "field": ["..."] } }`.
 
 ## Стартување на сидери и тестови
 
