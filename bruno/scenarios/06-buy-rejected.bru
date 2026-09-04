@@ -1,0 +1,29 @@
+meta {
+  name: 06 Buy Rejected
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/clients/{{clientId}}/transactions
+  body: json
+  auth: none
+}
+
+headers {
+  Accept: application/json
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "type": "buy",
+    "instrument": "ANA",
+    "quantity": 7,
+    "price": "100.00"
+  }
+}
+
+docs {
+  Ana workflow step 6. Expected 422 insufficient_funds. Ledger unchanged.
+}

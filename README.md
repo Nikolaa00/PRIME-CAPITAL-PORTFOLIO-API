@@ -15,6 +15,10 @@ Two layers answer two different questions:
 
 Garbage never reaches the service layer. Invalid shape is rejected by validation; valid shape that breaks account rules is rejected by domain exceptions inside `LedgerService`.
 
+### Manual testing
+
+Open the `bruno/` folder in [Bruno](https://www.usebruno.com/), select the **local** environment, run **Create Client**, then exercise the other requests (or run the **scenarios** folder in order for the Ana workflow).
+
 <p align="center">
 <a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>

@@ -1,0 +1,27 @@
+meta {
+  name: Withdrawal
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/clients/{{clientId}}/transactions
+  body: json
+  auth: none
+}
+
+headers {
+  Accept: application/json
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "type": "withdrawal",
+    "amount": "100.00"
+  }
+}
+
+docs {
+  Expected: 201 Created if client has sufficient cash, otherwise 422 insufficient_funds.
+}
