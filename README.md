@@ -1,86 +1,259 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Prime Capital Portfolio API
 
-## Prime Capital Portfolio API
+Append-only ledger API for client cash and instrument holdings. Every deposit, withdrawal, buy, and sell is stored as an immutable transaction row. Cash balance and holdings are derived from that ledger in SQL — they are never stored separately. Business rules are enforced on every write: a client cannot spend more cash than they have, and cannot sell more of an instrument than they hold.
 
-Append-only ledger API for client cash and holdings. Cash balance and instrument positions are derived from transaction history, not stored separately.
+## Requirements
 
-### Setup
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Laravel Sail runs the app and PostgreSQL)
+- PHP 8.5+ and [Composer](https://getcomposer.org/) (needed once for `composer install` before Sail takes over)
 
-```bash
-vendor/bin/sail up -d
-vendor/bin/sail artisan migrate:fresh --seed
-```
-
-After seeding, `GET /api/clients/1` returns Ana with cash `860.00` and 2 AAPL.
-
-### Architecture: validation vs business rules
-
-Two layers answer two different questions:
-
-| Layer | Question | HTTP 422 response |
-|-------|----------|-------------------|
-| **FormRequest** | Is this request well-formed? (required fields, positive amounts, whole-number quantity, no smuggled fields for the given type) | `{ "message": "...", "errors": { "field": ["..."] } }` |
-| **LedgerService** | Is this move allowed given the client's current balance and holdings? | `{ "message": "...", "error": "insufficient_funds" }` |
-
-Garbage never reaches the service layer. Invalid shape is rejected by validation; valid shape that breaks account rules is rejected by domain exceptions inside `LedgerService`.
-
-### Manual testing
-
-Open the `bruno/` folder in [Bruno](https://www.usebruno.com/), select the **local** environment, run **Create Client**, then exercise the other requests (or run the **scenarios** folder in order for the Ana workflow).
-
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
-
-## About Laravel
-
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
-
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
-
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Local setup
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone <your-repo-url>
+cd prime-capital-portfolio-api
+cp .env.example .env
+composer install
+./vendor/bin/sail up -d
+./vendor/bin/sail artisan key:generate
+./vendor/bin/sail artisan migrate --seed
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+**Base URL:** `http://localhost:8080/api`
 
-## Contributing
+### Ports
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+| Variable | Default | Why |
+|----------|---------|-----|
+| `APP_PORT` | `8080` | Maps host port 8080 → container port 80 (nginx). Avoids conflicts when port 80 is already in use on Windows/WSL. |
+| `FORWARD_DB_PORT` | `5432` | Exposes PostgreSQL on the host for GUI clients. The app connects to `pgsql` inside the Docker network. |
 
-## Code of Conduct
+After seeding, verify Ana's portfolio:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+curl -s http://localhost:8080/api/clients/1
+# cash: "860.00", holdings: {"AAPL": 2}
+```
 
-## Security Vulnerabilities
+**Manual testing:** open the `bruno/` folder in [Bruno](https://www.usebruno.com/), select the **local** environment (`http://localhost:8080`), and run the requests.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## API reference
 
-## License
+All requests should include `Accept: application/json`. POST bodies use `Content-Type: application/json`.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### 1. Create client
+
+```bash
+curl -s -X POST http://localhost:8080/api/clients \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Marko","currency":"EUR"}'
+```
+
+```json
+{"id":4,"name":"Marko","currency":"EUR"}
+```
+
+### 2. List clients
+
+```bash
+curl -s http://localhost:8080/api/clients
+```
+
+```json
+{"data":[{"id":1,"name":"Ana","currency":"EUR"},{"id":2,"name":"Bojan","currency":"EUR"},{"id":3,"name":"Cvetanka","currency":"EUR"}]}
+```
+
+### 3. Show client (cash + holdings)
+
+```bash
+curl -s http://localhost:8080/api/clients/1
+```
+
+```json
+{"data":{"id":1,"name":"Ana","currency":"EUR"},"cash":"860.00","holdings":{"AAPL":2}}
+```
+
+Client fields are under `"data"`; `cash` and `holdings` are top-level siblings.
+
+### 4. Cash balance
+
+```bash
+curl -s http://localhost:8080/api/clients/1/balance
+```
+
+```json
+{"cash":"860.00","currency":"EUR"}
+```
+
+### 5. Holdings
+
+```bash
+curl -s http://localhost:8080/api/clients/1/holdings
+```
+
+```json
+{"holdings":{"AAPL":2}}
+```
+
+Fully sold instruments are omitted (not returned as zero). Cvetanka (id 3) after seed:
+
+```json
+{"data":{"id":3,"name":"Cvetanka","currency":"EUR"},"cash":"1200.00","holdings":[]}
+```
+
+### 6. List transactions (paginated, newest first)
+
+```bash
+curl -s http://localhost:8080/api/clients/1/transactions
+```
+
+```json
+{
+    "data": [
+        {
+            "id": 2,
+            "client_id": 1,
+            "type": "buy",
+            "amount": "500.00",
+            "instrument": "AAPL",
+            "quantity": 5,
+            "price": "100.00",
+            "created_at": "2026-09-04T17:53:19+00:00"
+        },
+        {
+            "id": 3,
+            "client_id": 1,
+            "type": "sell",
+            "amount": "360.00",
+            "instrument": "AAPL",
+            "quantity": 3,
+            "price": "120.00",
+            "created_at": "2026-09-04T17:53:19+00:00"
+        },
+        {
+            "id": 1,
+            "client_id": 1,
+            "type": "deposit",
+            "amount": "1000.00",
+            "instrument": null,
+            "quantity": null,
+            "price": null,
+            "created_at": "2026-09-04T17:53:19+00:00"
+        }
+    ],
+    "links": {
+        "first": "http://localhost:8080/api/clients/1/transactions?page=1",
+        "last": "http://localhost:8080/api/clients/1/transactions?page=1",
+        "prev": null,
+        "next": null
+    },
+    "meta": {
+        "current_page": 1,
+        "from": 1,
+        "last_page": 1,
+        "path": "http://localhost:8080/api/clients/1/transactions",
+        "per_page": 15,
+        "to": 3,
+        "total": 3
+    }
+}
+```
+
+### 7. Record a transaction
+
+Single endpoint for all movement types. Pass `type`: `deposit`, `withdrawal`, `buy`, or `sell`.
+
+**Deposit** (cash movements have `instrument`, `quantity`, and `price` as `null`):
+
+```bash
+curl -s -X POST http://localhost:8080/api/clients/4/transactions \
+  -H "Content-Type: application/json" \
+  -d '{"type":"deposit","amount":"100.00"}'
+```
+
+```json
+{"id":11,"client_id":4,"type":"deposit","amount":"100.00","instrument":null,"quantity":null,"price":null,"created_at":"2026-09-04T17:53:20+00:00"}
+```
+
+**Buy** example:
+
+```bash
+curl -s -X POST http://localhost:8080/api/clients/4/transactions \
+  -H "Content-Type: application/json" \
+  -d '{"type":"buy","instrument":"AAPL","quantity":1,"price":"100.00"}'
+```
+
+**Sell** and **withdrawal** use the same URL with `"type":"sell"` or `"type":"withdrawal"` and the appropriate fields.
+
+### Rejection examples (422)
+
+**Business rule violation** — withdrawal above balance (`LedgerService`):
+
+```bash
+curl -s -X POST http://localhost:8080/api/clients/1/transactions \
+  -H "Content-Type: application/json" \
+  -d '{"type":"withdrawal","amount":"9999.00"}'
+```
+
+```json
+{"message":"Insufficient funds: balance is 860.00 EUR, requested 9999.00 EUR.","error":"insufficient_funds"}
+```
+
+**Validation failure** — negative amount (`FormRequest`):
+
+```bash
+curl -s -X POST http://localhost:8080/api/clients/1/transactions \
+  -H "Content-Type: application/json" \
+  -d '{"type":"deposit","amount":"-10.00"}'
+```
+
+```json
+{"message":"The amount field must be greater than 0.","errors":{"amount":["The amount field must be greater than 0."]}}
+```
+
+| Layer | Question | HTTP 422 shape |
+|-------|----------|----------------|
+| **FormRequest** | Is the request well-formed? | `{ "message": "...", "errors": { "field": ["..."] } }` |
+| **LedgerService** | Is the move allowed given current balance/holdings? | `{ "message": "...", "error": "insufficient_funds" }` or `"insufficient_holdings"` |
+
+## Business rules
+
+Two invariants apply on every write:
+
+1. **No negative balance** — a client cannot withdraw or buy with more cash than they hold. Violations return HTTP 422 with `"error": "insufficient_funds"`. The ledger is unchanged (no partial row).
+2. **No overselling** — a client cannot sell more units of an instrument than they hold. Violations return HTTP 422 with `"error": "insufficient_holdings"`. The ledger is unchanged.
+
+Rejections are atomic: tests assert `Transaction::count()`, cash, and holdings stay the same after a failed move.
+
+## Running tests
+
+```bash
+./vendor/bin/sail artisan test
+```
+
+23 tests cover ledger domain rules (`LedgerServiceTest`), HTTP 201/422 responses, input validation, and the full Ana scenario end-to-end. Tests use the PostgreSQL `testing` database (`DB_CONNECTION=pgsql`, `DB_DATABASE=testing` in `phpunit.xml`).
+
+## Why this way
+
+**Ledger as source of truth.** Cash and holdings are SQL aggregates over `transactions`. There are no balance or holdings columns to drift out of sync with the journal.
+
+**Integer cents internally.** Amounts are stored as `amount_cents` (and `price_cents` for trades). `LedgerService` works only in integers; `Money::fromDecimal()` / `Money::toDecimal()` convert at the API boundary so floats never touch money math. I consciously left a 2-decimal assumption because the task involves one currency per client without FX; for production I would add a currency exponent map.
+
+**Two validation layers.** Form requests reject malformed input (wrong fields, zero quantity, negative amounts) before the service runs. `LedgerService` rejects moves that are well-formed but break account rules. Different 422 shapes make it clear which layer caught the problem.
+
+**Concurrency.** Each write runs inside `DB::transaction` with `lockForUpdate` on the client row, so two concurrent requests cannot both pass a balance check and overdraw the account.
+
+**One transactions endpoint.** A single `POST /api/clients/{id}/transactions` accepts a `type` field instead of four separate routes. This keeps the API small; the trade-off is that route naming no longer spells out the operation — the `type` field does.
+
+**Instrument as free-text label.** Tickers are normalized to uppercase on write. There is no instrument catalogue; the label is whatever the operator enters.
+
+**No authentication in this task.** The assignment focuses on ledger correctness. In production I would protect write endpoints with staff authentication (e.g. Sanctum tokens).
+
+## What I'd add with more time
+
+- **Idempotency keys** on `POST /transactions` so network retries cannot duplicate ledger entries
+- **Staff authentication** (Sanctum) for write endpoints — not role-based authorization, which is a separate concern
+- **Stricter rate limits** on write endpoints
+- **Cursor pagination** for clients with long transaction histories
+- **Currency-aware formatting** — ISO exponent map (`Money::toDecimal($minor, $currency)`), rename `amount_cents` → `amount_minor`
+- **Audit log** tying each posted movement to the staff user who recorded it
