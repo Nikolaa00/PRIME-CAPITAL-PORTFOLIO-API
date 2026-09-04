@@ -6,7 +6,9 @@ Normalize tickers and currency codes in `prepareForValidation()` before rules ru
 
 Convert decimal money to integer cents at the API boundary with `App\Support\Money::fromDecimal()`. Services and the ledger work only in integer cents.
 
-Controllers delegate business rules to `LedgerService`. Do not duplicate balance or holdings checks in controllers or form requests.
+Controllers stay thin: validate via Form Requests, then delegate to `app/Services/` classes. Do not put domain logic or Money conversion in controllers.
+
+`TransactionService` orchestrates validated input and delegates ledger writes to `LedgerService`. Do not duplicate balance or holdings checks outside `LedgerService`.
 
 Validation failures return HTTP 422 with Laravel's `{message, errors}` shape. Domain rule failures from `LedgerService` return HTTP 422 with `{message, error}`.
 
