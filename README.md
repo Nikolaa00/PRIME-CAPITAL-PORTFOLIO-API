@@ -259,12 +259,11 @@ Rejections are atomic: tests assert `Transaction::count()`, cash, and holdings s
 
 ## What I'd add with more time
 
-- **Idempotency keys** on `POST /transactions` so network retries cannot duplicate ledger entries
-- **Staff authentication** (Sanctum) for write endpoints — not role-based authorization, which is a separate concern
-- **Stricter rate limits** on write endpoints
-- **Cursor pagination** for clients with long transaction histories
-- **Currency-aware formatting** — ISO exponent map (`Money::toDecimal($minor, $currency)`), rename `amount_cents` → `amount_minor`
-- **Audit log** tying each posted movement to the staff user who recorded it
+- **Idempotency keys** on `POST /transactions` — client sends `Idempotency-Key`; server returns the same result for retries instead of duplicating ledger entries (different from Request ID, which is for tracing, not deduplication).
+- **Request ID** on every response (`X-Request-Id`) and in logs — so support can investigate a reported error by searching one ID instead of guessing from timestamps.
+- **Staff authentication** (Sanctum) on write endpoints — who is allowed to post movements; separate from role-based authorization.
+- **Audit log** — tie each posted transaction to the staff user who recorded it (who, when, which client).
+- **Cursor pagination** for `GET /transactions` — append-only ledgers grow without bound; cursors stay stable under concurrent writes.
 
 ---
 
@@ -521,9 +520,8 @@ curl -s -X POST http://localhost:8080/api/clients/1/transactions \
 
 ## Што би додал со повеќе време
 
-- **Идемпотентни клучеви (Idempotency keys)** на `POST /transactions` за мрежните ретраи (retries) да не можат да дуплираат записи во дневникот.
-- **Автентикација на персоналот** (Sanctum) за запишувачките рути — не улоги и дозволи (authorization), што е посебен сегмент.
-- **Построги лимити (Rate limiting)** на запишувачките рути.
-- **Cursor пагинација** за клиенти со долги истории на трансакции.
-- **Форматирање прилагодено на валутата** — ISO експонент мапа (`Money::toDecimal($minor, $currency)`), преименување на `amount_cents` во `amount_minor`.
-- **Ревизорски дневник (Audit log)** што го поврзува секое запишано движење со корисникот од персоналот кој го внел.
+- **Идемпотентни клучеви (Idempotency keys)** на `POST /transactions` — клиентот праќа `Idempotency-Key`; серверот го враќа истиот резултат при retry наместо да дуплира запис во дневникот (различно од Request ID, кој е за следење, не за дедупликација).
+- **Request ID** на секој одговор (`X-Request-Id`) и во логовите — за поддршка да може да ја истражи пријавена грешка пребарувајќи по еден ID наместо по време.
+- **Автентикација на персоналот** (Sanctum) за запишувачките рути — кој смее да постира движења; одделно од улоги и дозволи (authorization).
+- **Ревизорски дневник (Audit log)** — секоја трансакција поврзана со корисникот од персоналот кој ја внел (кој, кога, за кој клиент).
+- **Cursor пагинација** за `GET /transactions` — append-only дневникот расте без граница; cursor pagination останува стабилен при конкурентни записи.
