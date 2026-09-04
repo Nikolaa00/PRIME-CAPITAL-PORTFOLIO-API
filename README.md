@@ -4,6 +4,15 @@
 
 Append-only ledger API for client cash and holdings. Cash balance and instrument positions are derived from transaction history, not stored separately.
 
+### Setup
+
+```bash
+vendor/bin/sail up -d
+vendor/bin/sail artisan migrate:fresh --seed
+```
+
+After seeding, `GET /api/clients/1` returns Ana with cash `860.00` and 2 AAPL.
+
 ### Architecture: validation vs business rules
 
 Two layers answer two different questions:
