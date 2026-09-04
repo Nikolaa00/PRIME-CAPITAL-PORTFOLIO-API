@@ -19,7 +19,7 @@ Append-only ledger API for client cash and instrument holdings. Every deposit, w
 ## Local setup
 
 ```bash
-git clone https://github.com/Nikolaa00/PRIME-CAPITAL-PORTFOLIO-API.git
+git clone -b feature/ledger-schema https://github.com/Nikolaa00/PRIME-CAPITAL-PORTFOLIO-API.git
 cd PRIME-CAPITAL-PORTFOLIO-API
 cp .env.example .env
 composer install
@@ -41,8 +41,59 @@ After seeding, verify Ana's portfolio:
 
 ```bash
 curl -s http://localhost:8080/api/clients/1
-# cash: "860.00", holdings: {"AAPL": 2}
 ```
+
+```json
+{"data":{"id":1,"name":"Ana","currency":"EUR"},"cash":"860.00","holdings":{"AAPL":2}}
+```
+
+## Talking to the API
+
+Send `Accept: application/json` on every request. POST bodies use `Content-Type: application/json`.
+
+| Method | Path | What it does |
+|--------|------|----------------|
+| `POST` | `/api/clients` | Create a client |
+| `GET` | `/api/clients` | List clients |
+| `GET` | `/api/clients/{id}` | Show client + cash + holdings |
+| `GET` | `/api/clients/{id}/balance` | Cash only |
+| `GET` | `/api/clients/{id}/holdings` | Holdings only (zeros omitted) |
+| `GET` | `/api/clients/{id}/transactions` | Paginated ledger, newest first |
+| `POST` | `/api/clients/{id}/transactions` | Record deposit, withdrawal, buy, or sell |
+
+**GET** — seeded Ana after `migrate --seed`:
+
+```bash
+curl -s http://localhost:8080/api/clients/1
+```
+
+```json
+{"data":{"id":1,"name":"Ana","currency":"EUR"},"cash":"860.00","holdings":{"AAPL":2}}
+```
+
+**POST** — deposit on a new client (create Marko first, then use his `id`):
+
+```bash
+curl -s -X POST http://localhost:8080/api/clients \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Marko","currency":"EUR"}'
+```
+
+```json
+{"id":4,"name":"Marko","currency":"EUR"}
+```
+
+```bash
+curl -s -X POST http://localhost:8080/api/clients/4/transactions \
+  -H "Content-Type: application/json" \
+  -d '{"type":"deposit","amount":"100.00"}'
+```
+
+```json
+{"id":11,"client_id":4,"type":"deposit","amount":"100.00","instrument":null,"quantity":null,"price":null,"created_at":"2026-09-04T17:53:20+00:00"}
+```
+
+`type` is `deposit`, `withdrawal`, `buy`, or `sell`. Buys/sells need `instrument`, `quantity`, and `price`. Full request set is in the Bruno collection below.
 
 ## Manual Testing with Bruno
 
@@ -56,46 +107,6 @@ The project includes a complete [Bruno](https://www.usebruno.com/) collection fo
    - `clients/` — Create, list, show, and check balance/holdings of clients.
    - `transactions/` — Record deposits, withdrawals, buys, sells, and list paginated transactions.
    - `scenarios/` — Step-by-step requests replicating the mentor's evaluation scenario (Ana's scenario).
-
-## API examples
-
-All requests should send `Accept: application/json`. POST bodies use `Content-Type: application/json`. The Bruno collection covers every endpoint; these three show the shapes.
-
-**Create client**
-
-```bash
-curl -s -X POST http://localhost:8080/api/clients \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Marko","currency":"EUR"}'
-```
-
-```json
-{"id":4,"name":"Marko","currency":"EUR"}
-```
-
-**Show client after seed** (Ana, id 1)
-
-```bash
-curl -s http://localhost:8080/api/clients/1
-```
-
-```json
-{"data":{"id":1,"name":"Ana","currency":"EUR"},"cash":"860.00","holdings":{"AAPL":2}}
-```
-
-**Rejected write** — withdrawal above balance (`LedgerService`, HTTP 422)
-
-```bash
-curl -s -X POST http://localhost:8080/api/clients/1/transactions \
-  -H "Content-Type: application/json" \
-  -d '{"type":"withdrawal","amount":"9999.00"}'
-```
-
-```json
-{"message":"Insufficient funds: balance is 860.00 EUR, requested 9999.00 EUR.","error":"insufficient_funds"}
-```
-
-Malformed input (wrong type, negative amount) is a different 422: `{ "message": "...", "errors": { "field": ["..."] } }`.
 
 ## Running Seeders & Tests
 
@@ -113,12 +124,8 @@ Malformed input (wrong type, negative amount) is a different 422: `{ "message": 
   # Or run phpunit directly:
   ./vendor/bin/sail bin phpunit
   ```
-- **Run Pint code formatter:**
-  ```bash
-  ./vendor/bin/sail bin pint --dirty --format agent
-  ```
 
-There are 23 tests covering ledger domain rules (`LedgerServiceTest`), HTTP 201/422 responses, input validation, and the full Ana scenario end-to-end. Tests use the PostgreSQL `testing` database (`DB_CONNECTION=pgsql`, `DB_DATABASE=testing` in `phpunit.xml`).
+There are 21 tests covering ledger domain rules (`LedgerServiceTest`), HTTP 201/422 responses, input validation, and the full Ana scenario end-to-end. Tests use the PostgreSQL `testing` database (`DB_CONNECTION=pgsql`, `DB_DATABASE=testing` in `phpunit.xml`).
 
 ## Business rules
 
@@ -170,7 +177,7 @@ API базирано на додатен дневник (append-only ledger) з�
 ## Локално подигнување
 
 ```bash
-git clone https://github.com/Nikolaa00/PRIME-CAPITAL-PORTFOLIO-API.git
+git clone -b feature/ledger-schema https://github.com/Nikolaa00/PRIME-CAPITAL-PORTFOLIO-API.git
 cd PRIME-CAPITAL-PORTFOLIO-API
 cp .env.example .env
 composer install
@@ -192,8 +199,59 @@ composer install
 
 ```bash
 curl -s http://localhost:8080/api/clients/1
-# готовина: "860.00", сопственост: {"AAPL": 2}
 ```
+
+```json
+{"data":{"id":1,"name":"Ana","currency":"EUR"},"cash":"860.00","holdings":{"AAPL":2}}
+```
+
+## Комуникација со API-то
+
+На секое барање пратете `Accept: application/json`. Телото на POST барањата користи `Content-Type: application/json`.
+
+| Метод | Патека | Што прави |
+|--------|------|----------------|
+| `POST` | `/api/clients` | Креира клиент |
+| `GET` | `/api/clients` | Листа клиенти |
+| `GET` | `/api/clients/{id}` | Прикажува клиент + готовина + сопственост |
+| `GET` | `/api/clients/{id}/balance` | Само готовина |
+| `GET` | `/api/clients/{id}/holdings` | Само сопственост (нулите се изоставени) |
+| `GET` | `/api/clients/{id}/transactions` | Пагиниран дневник, најновите први |
+| `POST` | `/api/clients/{id}/transactions` | Запишува депозит, повлекување, купување или продавање |
+
+**GET** — Ана по `migrate --seed`:
+
+```bash
+curl -s http://localhost:8080/api/clients/1
+```
+
+```json
+{"data":{"id":1,"name":"Ana","currency":"EUR"},"cash":"860.00","holdings":{"AAPL":2}}
+```
+
+**POST** — депозит на нов клиент (прво креирај го Марко, па користи го неговиот `id`):
+
+```bash
+curl -s -X POST http://localhost:8080/api/clients \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Marko","currency":"EUR"}'
+```
+
+```json
+{"id":4,"name":"Marko","currency":"EUR"}
+```
+
+```bash
+curl -s -X POST http://localhost:8080/api/clients/4/transactions \
+  -H "Content-Type: application/json" \
+  -d '{"type":"deposit","amount":"100.00"}'
+```
+
+```json
+{"id":11,"client_id":4,"type":"deposit","amount":"100.00","instrument":null,"quantity":null,"price":null,"created_at":"2026-09-04T17:53:20+00:00"}
+```
+
+`type` е `deposit`, `withdrawal`, `buy` или `sell`. Купувањето и продавањето бараат `instrument`, `quantity` и `price`. Целосната колекција е во Bruno подолу.
 
 ## Мануелно тестирање со Bruno
 
@@ -207,46 +265,6 @@ curl -s http://localhost:8080/api/clients/1
    - `clients/` — Креирање, листање, прикажување и проверка на состојба/сопственост на клиентите.
    - `transactions/` — Запишување депозити, повлекувања, купувања, продавања и листање на пагинирани трансакции.
    - `scenarios/` — Чекор-по-чекор барања кои го реплицираат сценариото за евалуација на менторот (сценариото за Ана).
-
-## API примери
-
-Сите барања треба да го праќаат `Accept: application/json`. POST телата користат `Content-Type: application/json`. Bruno колекцијата ги покрива сите рути; овие три ги покажуваат формите.
-
-**Креирај клиент**
-
-```bash
-curl -s -X POST http://localhost:8080/api/clients \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Marko","currency":"EUR"}'
-```
-
-```json
-{"id":4,"name":"Marko","currency":"EUR"}
-```
-
-**Прикажи клиент по seed** (Ана, id 1)
-
-```bash
-curl -s http://localhost:8080/api/clients/1
-```
-
-```json
-{"data":{"id":1,"name":"Ana","currency":"EUR"},"cash":"860.00","holdings":{"AAPL":2}}
-```
-
-**Одбиено запишување** — повлекување над состојбата (`LedgerService`, HTTP 422)
-
-```bash
-curl -s -X POST http://localhost:8080/api/clients/1/transactions \
-  -H "Content-Type: application/json" \
-  -d '{"type":"withdrawal","amount":"9999.00"}'
-```
-
-```json
-{"message":"Insufficient funds: balance is 860.00 EUR, requested 9999.00 EUR.","error":"insufficient_funds"}
-```
-
-Лошо обликуван влез (погрешен тип, негативен износ) е друга 422: `{ "message": "...", "errors": { "field": ["..."] } }`.
 
 ## Стартување на сидери и тестови
 
@@ -264,12 +282,8 @@ curl -s -X POST http://localhost:8080/api/clients/1/transactions \
   # Или директно со phpunit:
   ./vendor/bin/sail bin phpunit
   ```
-- **Стартување на Pint форматeрот:**
-  ```bash
-  ./vendor/bin/sail bin pint --dirty --format agent
-  ```
 
-Вкупно 23 тестови ги покриваат бизнис правилата на дневникот (`LedgerServiceTest`), HTTP 201/422 одговорите, валидацијата на влезните податоци и целосното сценарио на Ана од почеток до крај. Тестовите ја користат PostgreSQL базата за тестирање (`DB_CONNECTION=pgsql`, `DB_DATABASE=testing` во `phpunit.xml`).
+Вкупно 21 тестови ги покриваат бизнис правилата на дневникот (`LedgerServiceTest`), HTTP 201/422 одговорите, валидацијата на влезните податоци и целосното сценарио на Ана од почеток до крај. Тестовите ја користат PostgreSQL базата за тестирање (`DB_CONNECTION=pgsql`, `DB_DATABASE=testing` во `phpunit.xml`).
 
 ## Бизнис правила
 
