@@ -42,6 +42,11 @@ return new class extends Migration
                     (type IN ('buy', 'sell') AND instrument IS NOT NULL AND quantity IS NOT NULL AND price_cents IS NOT NULL)
                     OR
                     (type IN ('deposit', 'withdrawal') AND instrument IS NULL AND quantity IS NULL AND price_cents IS NULL)
+                ),
+            ADD CONSTRAINT transactions_trade_amount_matches
+                CHECK (
+                    type NOT IN ('buy', 'sell')
+                    OR amount_cents = quantity * price_cents
                 )
         ");
     }

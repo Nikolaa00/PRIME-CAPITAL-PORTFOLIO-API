@@ -3,12 +3,19 @@
 namespace App\Models;
 
 use App\Enums\TransactionType;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+#[Fillable(['client_id', 'type', 'amount_cents', 'instrument', 'quantity', 'price_cents'])]
 class Transaction extends Model
 {
+    public static function tradeAmountCents(int $quantity, int $priceCents): int
+    {
+        return $quantity * $priceCents;
+    }
+
     /**
      * @return array<string, string>
      */
