@@ -12,13 +12,14 @@ Append-only ledger API for client cash and instrument holdings. Every deposit, w
 
 ## Requirements
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Laravel Sail runs the app and PostgreSQL)
-- PHP 8.5+ and [Composer](https://getcomposer.org/) (needed once for `composer install` before Sail takes over)
+- **Docker Desktop** or **Docker Compose** (Laravel Sail runs the app and PostgreSQL)
+- **WSL2 (Ubuntu)** on Windows (highly recommended for optimal Docker container performance)
+- **PHP 8.5+** and **Composer** (needed once on the host for the initial `composer install` before Sail takes over)
 
 ## Local setup
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/Nikolaa00/PRIME-CAPITAL-PORTFOLIO-API.git
 cd prime-capital-portfolio-api
 cp .env.example .env
 composer install
@@ -43,186 +44,41 @@ curl -s http://localhost:8080/api/clients/1
 # cash: "860.00", holdings: {"AAPL": 2}
 ```
 
-**Manual testing:** open the `bruno/` folder in [Bruno](https://www.usebruno.com/), select the **local** environment (`http://localhost:8080`), and run the requests.
+## Manual Testing with Bruno
 
-## API reference
+The project includes a complete [Bruno](https://www.usebruno.com/) collection for API testing. You can use the Bruno Desktop App, the Bruno VS Code extension, or the Bruno web client.
 
-All requests should include `Accept: application/json`. POST bodies use `Content-Type: application/json`.
+1. Install Bruno or the VS Code extension.
+2. Open Bruno and select **Open Collection**.
+3. Choose the `bruno/` folder in the root of this repository.
+4. Select the **local** environment from the environment dropdown in the top-right corner (configured for `http://localhost:8080`).
+5. Run requests from the following folders:
+   - `clients/` — Create, list, show, and check balance/holdings of clients.
+   - `transactions/` — Record deposits, withdrawals, buys, sells, and list paginated transactions.
+   - `scenarios/` — Step-by-step requests replicating the mentor's evaluation scenario (Ana's scenario).
 
-### 1. Create client
+## Running Seeders & Tests
 
-```bash
-curl -s -X POST http://localhost:8080/api/clients \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Marko","currency":"EUR"}'
-```
+- **Run migrations and seeders:**
+  ```bash
+  ./vendor/bin/sail artisan migrate --seed
+  ```
+- **Run seeders only:**
+  ```bash
+  ./vendor/bin/sail artisan db:seed
+  ```
+- **Run tests (PHPUnit):**
+  ```bash
+  ./vendor/bin/sail artisan test
+  # Or run phpunit directly:
+  ./vendor/bin/sail bin phpunit
+  ```
+- **Run Pint code formatter:**
+  ```bash
+  ./vendor/bin/sail bin pint --dirty --format agent
+  ```
 
-```json
-{"id":4,"name":"Marko","currency":"EUR"}
-```
-
-### 2. List clients
-
-```bash
-curl -s http://localhost:8080/api/clients
-```
-
-```json
-{"data":[{"id":1,"name":"Ana","currency":"EUR"},{"id":2,"name":"Bojan","currency":"EUR"},{"id":3,"name":"Cvetanka","currency":"EUR"}]}
-```
-
-### 3. Show client (cash + holdings)
-
-```bash
-curl -s http://localhost:8080/api/clients/1
-```
-
-```json
-{"data":{"id":1,"name":"Ana","currency":"EUR"},"cash":"860.00","holdings":{"AAPL":2}}
-```
-
-Client fields are under `"data"`; `cash` and `holdings` are top-level siblings.
-
-### 4. Cash balance
-
-```bash
-curl -s http://localhost:8080/api/clients/1/balance
-```
-
-```json
-{"cash":"860.00","currency":"EUR"}
-```
-
-### 5. Holdings
-
-```bash
-curl -s http://localhost:8080/api/clients/1/holdings
-```
-
-```json
-{"holdings":{"AAPL":2}}
-```
-
-Fully sold instruments are omitted (not returned as zero). Cvetanka (id 3) after seed:
-
-```json
-{"data":{"id":3,"name":"Cvetanka","currency":"EUR"},"cash":"1200.00","holdings":[]}
-```
-
-### 6. List transactions (paginated, newest first)
-
-```bash
-curl -s http://localhost:8080/api/clients/1/transactions
-```
-
-```json
-{
-    "data": [
-        {
-            "id": 2,
-            "client_id": 1,
-            "type": "buy",
-            "amount": "500.00",
-            "instrument": "AAPL",
-            "quantity": 5,
-            "price": "100.00",
-            "created_at": "2026-09-04T17:53:19+00:00"
-        },
-        {
-            "id": 3,
-            "client_id": 1,
-            "type": "sell",
-            "amount": "360.00",
-            "instrument": "AAPL",
-            "quantity": 3,
-            "price": "120.00",
-            "created_at": "2026-09-04T17:53:19+00:00"
-        },
-        {
-            "id": 1,
-            "client_id": 1,
-            "type": "deposit",
-            "amount": "1000.00",
-            "instrument": null,
-            "quantity": null,
-            "price": null,
-            "created_at": "2026-09-04T17:53:19+00:00"
-        }
-    ],
-    "links": {
-        "first": "http://localhost:8080/api/clients/1/transactions?page=1",
-        "last": "http://localhost:8080/api/clients/1/transactions?page=1",
-        "prev": null,
-        "next": null
-    },
-    "meta": {
-        "current_page": 1,
-        "from": 1,
-        "last_page": 1,
-        "path": "http://localhost:8080/api/clients/1/transactions",
-        "per_page": 15,
-        "to": 3,
-        "total": 3
-    }
-}
-```
-
-### 7. Record a transaction
-
-Single endpoint for all movement types. Pass `type`: `deposit`, `withdrawal`, `buy`, or `sell`.
-
-**Deposit** (cash movements have `instrument`, `quantity`, and `price` as `null`):
-
-```bash
-curl -s -X POST http://localhost:8080/api/clients/4/transactions \
-  -H "Content-Type: application/json" \
-  -d '{"type":"deposit","amount":"100.00"}'
-```
-
-```json
-{"id":11,"client_id":4,"type":"deposit","amount":"100.00","instrument":null,"quantity":null,"price":null,"created_at":"2026-09-04T17:53:20+00:00"}
-```
-
-**Buy** example:
-
-```bash
-curl -s -X POST http://localhost:8080/api/clients/4/transactions \
-  -H "Content-Type: application/json" \
-  -d '{"type":"buy","instrument":"AAPL","quantity":1,"price":"100.00"}'
-```
-
-**Sell** and **withdrawal** use the same URL with `"type":"sell"` or `"type":"withdrawal"` and the appropriate fields.
-
-### Rejection examples (422)
-
-**Business rule violation** — withdrawal above balance (`LedgerService`):
-
-```bash
-curl -s -X POST http://localhost:8080/api/clients/1/transactions \
-  -H "Content-Type: application/json" \
-  -d '{"type":"withdrawal","amount":"9999.00"}'
-```
-
-```json
-{"message":"Insufficient funds: balance is 860.00 EUR, requested 9999.00 EUR.","error":"insufficient_funds"}
-```
-
-**Validation failure** — negative amount (`FormRequest`):
-
-```bash
-curl -s -X POST http://localhost:8080/api/clients/1/transactions \
-  -H "Content-Type: application/json" \
-  -d '{"type":"deposit","amount":"-10.00"}'
-```
-
-```json
-{"message":"The amount field must be greater than 0.","errors":{"amount":["The amount field must be greater than 0."]}}
-```
-
-| Layer | Question | HTTP 422 shape |
-|-------|----------|----------------|
-| **FormRequest** | Is the request well-formed? | `{ "message": "...", "errors": { "field": ["..."] } }` |
-| **LedgerService** | Is the move allowed given current balance/holdings? | `{ "message": "...", "error": "insufficient_funds" }` or `"insufficient_holdings"` |
+There are 23 tests covering ledger domain rules (`LedgerServiceTest`), HTTP 201/422 responses, input validation, and the full Ana scenario end-to-end. Tests use the PostgreSQL `testing` database (`DB_CONNECTION=pgsql`, `DB_DATABASE=testing` in `phpunit.xml`).
 
 ## Business rules
 
@@ -233,21 +89,15 @@ Two invariants apply on every write:
 
 Rejections are atomic: tests assert `Transaction::count()`, cash, and holdings stay the same after a failed move.
 
-## Running tests
-
-```bash
-./vendor/bin/sail artisan test
-```
-
-23 tests cover ledger domain rules (`LedgerServiceTest`), HTTP 201/422 responses, input validation, and the full Ana scenario end-to-end. Tests use the PostgreSQL `testing` database (`DB_CONNECTION=pgsql`, `DB_DATABASE=testing` in `phpunit.xml`).
-
 ## Why this way
 
 **Ledger as source of truth.** Cash and holdings are SQL aggregates over `transactions`. There are no balance or holdings columns to drift out of sync with the journal.
 
 **Integer cents internally.** Amounts are stored as `amount_cents` (and `price_cents` for trades). `LedgerService` works only in integers; `Money::fromDecimal()` / `Money::toDecimal()` convert at the API boundary so floats never touch money math. I consciously left a 2-decimal assumption because the task involves one currency per client without FX; for production I would add a currency exponent map.
 
-**Two validation layers.** Form requests reject malformed input (wrong fields, zero quantity, negative amounts) before the service runs. `LedgerService` rejects moves that are well-formed but break account rules. Different 422 shapes make it clear which layer caught the problem.
+**Two validation layers.** Form requests reject malformed input (wrong fields, zero quantity, negative amounts) before the service runs. `LedgerService` rejects moves that are well-formed but break account rules. Different 422 shapes make it clear which layer caught the problem:
+- **FormRequest (validation failure):** `{ "message": "...", "errors": { "field": ["..."] } }`
+- **LedgerService (business rule violation):** `{ "message": "...", "error": "insufficient_funds" }` or `"insufficient_holdings"`
 
 **Concurrency.** Each write runs inside `DB::transaction` with `lockForUpdate` on the client row, so two concurrent requests cannot both pass a balance check and overdraw the account.
 
@@ -273,13 +123,14 @@ API базирано на додатен дневник (append-only ledger) з�
 
 ## Барања
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Laravel Sail ги стартува апликацијата и PostgreSQL)
-- PHP 8.5+ и [Composer](https://getcomposer.org/) (потребни се само еднаш за почетниот `composer install` пред да преземе Sail)
+- **Docker Desktop** или **Docker Compose** (Laravel Sail ги стартува апликацијата и PostgreSQL)
+- **WSL2 (Ubuntu)** на Windows (исклучително препорачано за оптимални перформанси на Docker контејнерите)
+- **PHP 8.5+** и **Composer** (потребни се само еднаш на хостот за почетниот `composer install` пред да преземе Sail)
 
 ## Локално подигнување
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/Nikolaa00/PRIME-CAPITAL-PORTFOLIO-API.git
 cd prime-capital-portfolio-api
 cp .env.example .env
 composer install
@@ -304,186 +155,41 @@ curl -s http://localhost:8080/api/clients/1
 # готовина: "860.00", сопственост: {"AAPL": 2}
 ```
 
-**Мануелно тестирање:** отворете го фолдерот `bruno/` во [Bruno](https://www.usebruno.com/), изберете ја околината **local** (`http://localhost:8080`) и извршете ги барањата.
+## Мануелно тестирање со Bruno
 
-## API референца
+Проектот вклучува комплетна [Bruno](https://www.usebruno.com/) колекција за тестирање на API-то. Можете да ја користите апликацијата Bruno Desktop, екстензијата за VS Code или веб-клиентот на Bruno.
 
-Сите барања треба да го вклучуваат заглавието `Accept: application/json`. Телото на POST барањата користи `Content-Type: application/json`.
+1. Инсталирајте го Bruno или соодветната VS Code екстензија.
+2. Отворете го Bruno и изберете **Open Collection**.
+3. Изберете го фолдерот `bruno/` во коренот на овој репозиториум.
+4. Изберете ја околината **local** од паѓачкото мени во горниот десен агол (конфигурирана за `http://localhost:8080`).
+5. Извршете ги барањата од следниве фолдери:
+   - `clients/` — Креирање, листање, прикажување и проверка на состојба/сопственост на клиентите.
+   - `transactions/` — Запишување депозити, повлекувања, купувања, продавања и листање на пагинирани трансакции.
+   - `scenarios/` — Чекор-по-чекор барања кои го реплицираат сценариото за евалуација на менторот (сценариото за Ана).
 
-### 1. Креирај клиент
+## Стартување на сидери и тестови
 
-```bash
-curl -s -X POST http://localhost:8080/api/clients \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Marko","currency":"EUR"}'
-```
+- **Стартување на миграции и сидери:**
+  ```bash
+  ./vendor/bin/sail artisan migrate --seed
+  ```
+- **Стартување само на сидери:**
+  ```bash
+  ./vendor/bin/sail artisan db:seed
+  ```
+- **Стартување на тестови (PHPUnit):**
+  ```bash
+  ./vendor/bin/sail artisan test
+  # Или директно со phpunit:
+  ./vendor/bin/sail bin phpunit
+  ```
+- **Стартување на Pint форматeрот:**
+  ```bash
+  ./vendor/bin/sail bin pint --dirty --format agent
+  ```
 
-```json
-{"id":4,"name":"Marko","currency":"EUR"}
-```
-
-### 2. Излистај клиенти
-
-```bash
-curl -s http://localhost:8080/api/clients
-```
-
-```json
-{"data":[{"id":1,"name":"Ana","currency":"EUR"},{"id":2,"name":"Bojan","currency":"EUR"},{"id":3,"name":"Cvetanka","currency":"EUR"}]}
-```
-
-### 3. Прикажи клиент (готовина + сопственост)
-
-```bash
-curl -s http://localhost:8080/api/clients/1
-```
-
-```json
-{"data":{"id":1,"name":"Ana","currency":"EUR"},"cash":"860.00","holdings":{"AAPL":2}}
-```
-
-Полињата на клиентот се под `"data"`, додека `cash` и `holdings` се на исто ниво како негови браќа/сестри.
-
-### 4. Состојба на готовина
-
-```bash
-curl -s http://localhost:8080/api/clients/1/balance
-```
-
-```json
-{"cash":"860.00","currency":"EUR"}
-```
-
-### 5. Сопственост на инструменти
-
-```bash
-curl -s http://localhost:8080/api/clients/1/holdings
-```
-
-```json
-{"holdings":{"AAPL":2}}
-```
-
-Целосно продадените инструменти се изоставени (не се враќаат со вредност нула). Цветанка (id 3) по seed:
-
-```json
-{"data":{"id":3,"name":"Cvetanka","currency":"EUR"},"cash":"1200.00","holdings":[]}
-```
-
-### 6. Излистај трансакции (со пагинација, најновите први)
-
-```bash
-curl -s http://localhost:8080/api/clients/1/transactions
-```
-
-```json
-{
-    "data": [
-        {
-            "id": 2,
-            "client_id": 1,
-            "type": "buy",
-            "amount": "500.00",
-            "instrument": "AAPL",
-            "quantity": 5,
-            "price": "100.00",
-            "created_at": "2026-09-04T17:53:19+00:00"
-        },
-        {
-            "id": 3,
-            "client_id": 1,
-            "type": "sell",
-            "amount": "360.00",
-            "instrument": "AAPL",
-            "quantity": 3,
-            "price": "120.00",
-            "created_at": "2026-09-04T17:53:19+00:00"
-        },
-        {
-            "id": 1,
-            "client_id": 1,
-            "type": "deposit",
-            "amount": "1000.00",
-            "instrument": null,
-            "quantity": null,
-            "price": null,
-            "created_at": "2026-09-04T17:53:19+00:00"
-        }
-    ],
-    "links": {
-        "first": "http://localhost:8080/api/clients/1/transactions?page=1",
-        "last": "http://localhost:8080/api/clients/1/transactions?page=1",
-        "prev": null,
-        "next": null
-    },
-    "meta": {
-        "current_page": 1,
-        "from": 1,
-        "last_page": 1,
-        "path": "http://localhost:8080/api/clients/1/transactions",
-        "per_page": 15,
-        "to": 3,
-        "total": 3
-    }
-}
-```
-
-### 7. Запиши трансакција
-
-Единствена крајна точка (endpoint) за сите типови на движења. Испратете `type`: `deposit`, `withdrawal`, `buy`, или `sell`.
-
-**Депозит** (движењата на готовина ги имаат `instrument`, `quantity` и `price` како `null`):
-
-```bash
-curl -s -X POST http://localhost:8080/api/clients/4/transactions \
-  -H "Content-Type: application/json" \
-  -d '{"type":"deposit","amount":"100.00"}'
-```
-
-```json
-{"id":11,"client_id":4,"type":"deposit","amount":"100.00","instrument":null,"quantity":null,"price":null,"created_at":"2026-09-04T17:53:20+00:00"}
-```
-
-**Купување** (Buy):
-
-```bash
-curl -s -X POST http://localhost:8080/api/clients/4/transactions \
-  -H "Content-Type: application/json" \
-  -d '{"type":"buy","instrument":"AAPL","quantity":1,"price":"100.00"}'
-```
-
-Продавањето (`sell`) и повлекувањето (`withdrawal`) ја користат истата URL адреса со соодветните вредности за `"type"` и полињата.
-
-### Примери за одбивање (422)
-
-**Кршење на бизнис правило** — повлекување над состојбата (`LedgerService`):
-
-```bash
-curl -s -X POST http://localhost:8080/api/clients/1/transactions \
-  -H "Content-Type: application/json" \
-  -d '{"type":"withdrawal","amount":"9999.00"}'
-```
-
-```json
-{"message":"Insufficient funds: balance is 860.00 EUR, requested 9999.00 EUR.","error":"insufficient_funds"}
-```
-
-**Неуспешна валидација** — негативен износ (`FormRequest`):
-
-```bash
-curl -s -X POST http://localhost:8080/api/clients/1/transactions \
-  -H "Content-Type: application/json" \
-  -d '{"type":"deposit","amount":"-10.00"}'
-```
-
-```json
-{"message":"The amount field must be greater than 0.","errors":{"amount":["The amount field must be greater than 0."]}}
-```
-
-| Слој | Прашање | Форма на HTTP 422 |
-|------|---------|-------------------|
-| **FormRequest** | Дали барањето е правилно обликувано? | `{ "message": "...", "errors": { "field": ["..."] } }` |
-| **LedgerService** | Дали движењето е дозволено со оглед на моменталната состојба/сопственост? | `{ "message": "...", "error": "insufficient_funds" }` или `"insufficient_holdings"` |
+Вкупно 23 тестови ги покриваат бизнис правилата на дневникот (`LedgerServiceTest`), HTTP 201/422 одговорите, валидацијата на влезните податоци и целосното сценарио на Ана од почеток до крај. Тестовите ја користат PostgreSQL базата за тестирање (`DB_CONNECTION=pgsql`, `DB_DATABASE=testing` во `phpunit.xml`).
 
 ## Бизнис правила
 
@@ -494,21 +200,15 @@ curl -s -X POST http://localhost:8080/api/clients/1/transactions \
 
 Одбивањата се атомски: тестовите потврдуваат дека `Transaction::count()`, готовината и сопственоста остануваат исти по неуспешно движење.
 
-## Стартување на тестови
-
-```bash
-./vendor/bin/sail artisan test
-```
-
-23 тестови ги покриваат бизнис правилата на дневникот (`LedgerServiceTest`), HTTP 201/422 одговорите, валидацијата на влезните податоци и целосното сценарио на Ана од почеток до крај. Тестовите ја користат PostgreSQL базата за тестирање (`DB_CONNECTION=pgsql`, `DB_DATABASE=testing` во `phpunit.xml`).
-
 ## Зошто вака?
 
 **Дневникот како единствен извор на вистината (Single Source of Truth).** Готовината и сопственоста се SQL агрегации врз табелата `transactions`. Не постојат посебни колони за состојба или сопственост кои би можеле да отстапат или да се десинхронизираат од дневникот.
 
 **Интегер центи внатрешно.** Износите се чуваат како `amount_cents` (и `price_cents` за тргување). `LedgerService` работи исклучиво со цели броеви (integers); `Money::fromDecimal()` / `Money::toDecimal()` вршат конверзија на самата API граница, така што децималните броеви (floats) никогаш не учествуваат во математичките пресметки. Свесно оставив претпоставка за 2 децимали бидејќи задачата работи со една валута по клиент без FX; за во продукција би додал мапа со експоненти за секоја валута.
 
-**Два слоја на валидација.** Form Requests ги одбиваат лошо обликуваните податоци (погрешни полиња, нула количина, негативни износи) пред да се активира услугата (service). `LedgerService` ги одбива движењата кои се добро обликувани, но ги кршат сметководствените правила. Различните форми на 422 јасно покажуваат кој слој го фатил проблемот.
+**Два слоја на валидација.** Form Requests ги одбиваат лошо обликуваните податоци (погрешни полиња, нула количина, негативни износи) пред да се активира услугата (service). `LedgerService` ги одбива движењата кои се добро обликувани, но ги кршат сметководствените правила. Различните форми на 422 јасно покажуваат кој слој го фатил проблемот:
+- **FormRequest (неуспешна валидација):** `{ "message": "...", "errors": { "field": ["..."] } }`
+- **LedgerService (кршење на бизнис правило):** `{ "message": "...", "error": "insufficient_funds" }` или `"insufficient_holdings"`
 
 **Конкурентност (Concurrency).** Секое запишување се извршува внатре во `DB::transaction` со песимистичко заклучување (`lockForUpdate`) на редот на клиентот, така што две конкурентни барања не можат истовремено да ја поминат проверката на салдото и да ја одведат сметката во минус.
 
