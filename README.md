@@ -19,7 +19,7 @@ Append-only ledger API for client cash and instrument holdings. Every deposit, w
 ## Local setup
 
 ```bash
-git clone -b feature/ledger-schema https://github.com/Nikolaa00/PRIME-CAPITAL-PORTFOLIO-API.git
+git clone https://github.com/Nikolaa00/PRIME-CAPITAL-PORTFOLIO-API.git
 cd PRIME-CAPITAL-PORTFOLIO-API
 cp .env.example .env
 composer install
@@ -177,7 +177,7 @@ API базирано на додатен дневник (append-only ledger) з�
 ## Локално подигнување
 
 ```bash
-git clone -b feature/ledger-schema https://github.com/Nikolaa00/PRIME-CAPITAL-PORTFOLIO-API.git
+git clone https://github.com/Nikolaa00/PRIME-CAPITAL-PORTFOLIO-API.git
 cd PRIME-CAPITAL-PORTFOLIO-API
 cp .env.example .env
 composer install
