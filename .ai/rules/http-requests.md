@@ -4,7 +4,9 @@ Use Form Request classes in `app/Http/Requests/` for API input validation. Prefe
 
 Normalize tickers and currency codes in `prepareForValidation()` before rules run.
 
-Convert decimal money to integer cents at the API boundary with `App\Support\Money::fromDecimal()`. Services and the ledger work only in integer cents.
+Convert decimal money to integer cents in `TransactionService` with `App\Support\Money::fromDecimal()`. `LedgerService` and the ledger work only in integer cents.
+
+Place JSON API controllers under `app/Http/Controllers/Api/`. Register routes in `routes/api.php`.
 
 Controllers stay thin: validate via Form Requests, then delegate to `app/Services/` classes. Do not put domain logic or Money conversion in controllers.
 

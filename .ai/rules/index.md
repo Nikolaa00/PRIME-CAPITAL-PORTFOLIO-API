@@ -5,6 +5,9 @@
 | `app/Models/**` | [models.md](models.md) |
 | `app/Enums/**` | [enums.md](enums.md) |
 | `app/Services/**` | [services.md](services.md) |
+| `app/Support/**` | [support.md](support.md) |
+| `app/Exceptions/**` | [exceptions.md](exceptions.md) |
 | `app/Http/Requests/**` | [http-requests.md](http-requests.md) |
 | `app/Http/Controllers/**` | [http-requests.md](http-requests.md) |
 | `database/migrations/**` | [migrations.md](migrations.md) |
+| `tests/**` | [tests.md](tests.md) |
