@@ -8,7 +8,7 @@ Convert decimal money to integer cents in `TransactionService` with `App\Support
 
 Place JSON API controllers under `app/Http/Controllers/Api/`. Register routes in `routes/api.php`.
 
-Controllers stay thin: validate via Form Requests, then delegate to `app/Services/` classes. Do not put domain logic or Money conversion in controllers.
+Controllers stay thin: validate via Form Requests, delegate to `app/Services/` classes, respond with `app/Http/Resources/` classes.
 
 `TransactionService` orchestrates validated input and delegates ledger writes to `LedgerService`. Do not duplicate balance or holdings checks outside `LedgerService`.
 

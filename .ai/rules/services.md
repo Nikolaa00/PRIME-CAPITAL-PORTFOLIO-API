@@ -7,7 +7,7 @@ Split responsibilities across services:
 - `PortfolioReader` — read model: cash balance and holdings from SQL aggregates
 - `LedgerService` — write model: append-only ledger rows, pessimistic lock, domain rule exceptions
 - `TransactionService` — API orchestration: `Money::fromDecimal()` then delegate to `LedgerService`
-- `ClientService` — client creation and simple response shaping
+- `ClientService` — client creation, listing, and portfolio reads via `PortfolioReader`
 
 Use explicit constructor injection: declare a private typed property and assign it in the constructor body. Do not use constructor property promotion in services.
 
